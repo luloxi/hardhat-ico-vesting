@@ -41,26 +41,4 @@ require("chai").should()
           totalSupply.should.equal(2)
         })
       })
-
-      // describe("Mint NFT", () => {
-      //   beforeEach(async () => {
-      //     const transactionResponse = await BasicNft.mintNft()
-      //     await transactionResponse.wait(1)
-      //   })
-      //   it("updates tokenCounter and tokenURI", async function () {
-      //     const tokenCounter = await BasicNft.getTokenCounter()
-      //     const tokenURI = await BasicNft.tokenURI(0)
-      //     assert.equal(tokenCounter.toString(), "1")
-      //     assert.equal(tokenURI.toString(), await BasicNft.TOKEN_URI())
-      //   })
-      //   it("Shows the correct balance and owner of an NFT", async function () {
-      //     const deployerAddress = deployer.address
-      //     const deployerBalance = await BasicNft.balanceOf(deployerAddress)
-      //     // Maybe someday I'll figure out how to make this work
-      //     //   const owner = await BasicNft.ownerOf("1")
-
-      //     assert.equal(deployerBalance.toString(), "1")
-      //     // assert.equal(owner, deployerAddress)
-      //   })
-      // })
     })

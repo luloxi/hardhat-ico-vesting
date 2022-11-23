@@ -1,5 +1,7 @@
 # ERC20 ICO with Vesting schedule
 
+Hardhat version of [this playlist by Dapp University](https://www.youtube.com/playlist?list=PLS5SEs8ZftgULF-lbxy-is9x_7mTMHFIN)
+
 - Crowdsale (send eth to smart contract and compute ammount of tokens based on a rate)
 - Timed Crowdsale (opening time and closing time)
 - Capped Crowdsale (maximum amount of funds it can raise on a crowd sale)
@@ -12,9 +14,13 @@
 
 ## How to use
 
+Move into selected version folder (currently only 0.24.4 is being developed, update is a work in progress)
+
 Install repository using `yarn`
 
-### Test locally
+Run tests with `yarn hardhat test`
+
+### Test with console
 
 1. Open a terminal and run `yarn hardhat node`
 2. On another terminal, run `yarn hardhat run scripts/deploy.js --network localhost`
