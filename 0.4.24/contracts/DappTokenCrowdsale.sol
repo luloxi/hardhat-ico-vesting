@@ -4,8 +4,9 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol";
 
-contract DappTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale {
+contract DappTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedCrowdsale {
   //  Minimum investor contribution - 0.002 ETH
   uint256 public investorMinCap = 2000000000000000;
   // Maximum investor contribution - 50 ETH
@@ -16,8 +17,15 @@ contract DappTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale {
     uint256 _rate,
     address _wallet,
     ERC20 _token,
-    uint256 _cap
-  ) public Crowdsale(_rate, _wallet, _token) CappedCrowdsale(_cap) {}
+    uint256 _cap,
+    uint256 _openingTime,
+    uint256 _closingTime
+  )
+    public
+    Crowdsale(_rate, _wallet, _token)
+    CappedCrowdsale(_cap)
+    TimedCrowdsale(_openingTime, _closingTime)
+  {}
 
   /**
    * @dev Returns the amount contributed so far by a specific user

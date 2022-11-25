@@ -1,7 +1,11 @@
 const { expect, assert } = require("chai")
-const { getNamedAccounts, deployments, ethers, network } = require("hardhat")
-const { developmentChains, networkConfig } = require("../../helper-hardhat-config")
 require("chai").should()
+const { deployments, ethers, network } = require("hardhat")
+const { developmentChains } = require("../../helper-hardhat-config")
+// require("../../node_modules/openzeppelin-solidity/test/helpers/latestTime")
+const { latestTime } = require("../helpers/latestTime") // Ethers version by me
+// require("../../node_modules/openzeppelin-solidity/test/helpers/increaseTime")
+const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ethers version by me
 
 // If not on a development chain
 !developmentChains.includes(network.name)
@@ -25,17 +29,25 @@ require("chai").should()
         const _wallet = safekeeper.address
         const _token = DappToken.address
         const _cap = ethers.utils.parseUnits("100", 18)
+        const _openingTime = (await latestTime()) + duration.weeks(1)
+        const _closingTime = _openingTime + duration.weeks(1)
+
         const DappTokenCrowdsale = await hre.ethers.getContractFactory("DappTokenCrowdsale")
         dapptokencrowdsale = await DappTokenCrowdsale.deploy(
           _rate, // rate, how many tokens per eth
           _wallet, // wallet
           _token, // ERC20 token address
-          _cap // Max amount of eth to be invested in the crowdsale
+          _cap, // Max amount of eth to be invested in the crowdsale
+          _openingTime, // Crowdsale starts 1 week from now
+          _closingTime // Ends 1 week after it started
         )
         await dapptokencrowdsale.deployed()
 
         // Transfer token ownership to crowdsale to grant minting permission
         await DappToken.transferOwnership(dapptokencrowdsale.address)
+
+        // Increase time so the crowdsale is open
+        await increaseTimeTo(_openingTime + 1)
       })
       describe("Deploy", function () {
         it("tracks the rate", async function () {
@@ -122,6 +134,12 @@ require("chai").should()
           })
           const contribution = await dapptokencrowdsale.getUserContribution(investor1.address)
           expect(contribution).to.equal(value)
+        })
+      })
+      describe("Timed Crowdsale", function () {
+        it("is open", async function () {
+          const isClosed = await dapptokencrowdsale.hasClosed()
+          isClosed.should.be.false
         })
       })
     })
