@@ -5,8 +5,17 @@ import "openzeppelin-solidity/contracts/crowdsale/Crowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/CappedCrowdsale.sol";
 import "openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/validation/WhitelistedCrowdsale.sol";
+import "openzeppelin-solidity/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
 
-contract DappTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedCrowdsale {
+contract DappTokenCrowdsale is
+  Crowdsale,
+  MintedCrowdsale,
+  CappedCrowdsale,
+  TimedCrowdsale,
+  WhitelistedCrowdsale,
+  RefundableCrowdsale
+{
   //  Minimum investor contribution - 0.002 ETH
   uint256 public investorMinCap = 2000000000000000;
   // Maximum investor contribution - 50 ETH
@@ -19,13 +28,17 @@ contract DappTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, Time
     ERC20 _token,
     uint256 _cap,
     uint256 _openingTime,
-    uint256 _closingTime
+    uint256 _closingTime,
+    uint256 _goal
   )
     public
     Crowdsale(_rate, _wallet, _token)
     CappedCrowdsale(_cap)
     TimedCrowdsale(_openingTime, _closingTime)
-  {}
+    RefundableCrowdsale(_goal)
+  {
+    require(_goal <= _cap);
+  }
 
   /**
    * @dev Returns the amount contributed so far by a specific user

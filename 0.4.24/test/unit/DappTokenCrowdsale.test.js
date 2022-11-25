@@ -11,14 +11,15 @@ const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ether
 !developmentChains.includes(network.name)
   ? describe.skip // skip this test, otherwise...
   : describe("DappTokenCrowdsale Unit Tests", async function () {
-      let deployer, safekeeper, investor1
+      let deployer, safekeeper, investor1, investor2
       let DappToken, dapptokencrowdsale
+
       const oneEther = ethers.utils.parseEther("1.0")
       const investorMinCap = ethers.utils.parseUnits("0.002", 18)
       const investorHardCap = ethers.utils.parseUnits("50", 18)
 
       beforeEach(async function () {
-        ;[deployer, safekeeper, investor1] = await ethers.getSigners()
+        ;[deployer, safekeeper, investor1, investor2] = await ethers.getSigners()
 
         /* Deploy token */
         await deployments.fixture("dapptoken")
@@ -31,6 +32,7 @@ const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ether
         const _cap = ethers.utils.parseUnits("100", 18)
         const _openingTime = (await latestTime()) + duration.weeks(1)
         const _closingTime = _openingTime + duration.weeks(1)
+        const _goal = ethers.utils.parseUnits("50", 18)
 
         const DappTokenCrowdsale = await hre.ethers.getContractFactory("DappTokenCrowdsale")
         dapptokencrowdsale = await DappTokenCrowdsale.deploy(
@@ -39,12 +41,18 @@ const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ether
           _token, // ERC20 token address
           _cap, // Max amount of eth to be invested in the crowdsale
           _openingTime, // Crowdsale starts 1 week from now
-          _closingTime // Ends 1 week after it started
+          _closingTime, // Ends 1 week after it started
+          _goal // Minimum amount of ETH to raise, otherwaise refund gets triggered
         )
         await dapptokencrowdsale.deployed()
 
         // Transfer token ownership to crowdsale to grant minting permission
         await DappToken.transferOwnership(dapptokencrowdsale.address)
+
+        // Add investors to whitelist
+        await dapptokencrowdsale.addManyToWhitelist([deployer.address, investor1.address])
+        // This one works for version 1.11.0 and above of openzeppelin-solidity dependency
+        // await dapptokencrowdsale.addAddressesToWhitelist([deployer.address, investor1.address])
 
         // Increase time so the crowdsale is open
         await increaseTimeTo(_openingTime + 1)
@@ -69,7 +77,7 @@ const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ether
           const startingBalance = await ethers.provider.getBalance(dapptokencrowdsale.address)
           expect(Number(startingBalance)).to.equal(0)
         })
-        it("should accept payments through receive function", async function () {
+        xit("should accept payments through receive function", async function () {
           // Crowdsale forwards received ETH to safekeeper wallet
           const startingBalance = await ethers.provider.getBalance(safekeeper.address)
           const transactionHash = await deployer.sendTransaction({
@@ -140,6 +148,31 @@ const { duration, increaseTimeTo } = require("../helpers/increaseTime") // Ether
         it("is open", async function () {
           const isClosed = await dapptokencrowdsale.hasClosed()
           isClosed.should.be.false
+        })
+      })
+      describe("Whitelisted Crowdsale", function () {
+        xit("rejects contributions from non-whitelisted investors", async function () {
+          const notWhitelisted = investor2.address
+          const buyTransaction = await dapptokencrowdsale.buyTokens(notWhitelisted, { value: 1 })
+          buyTransaction.should.be.rejected
+        })
+      })
+      describe("Refundable Crowdsale", function () {
+        beforeEach(async function () {
+          await dapptokencrowdsale.buyTokens(investor1.address, {
+            value: ethers.utils.parseUnits("1", 18),
+          })
+        })
+        describe("during crowdsale", function () {
+          it("prevents the investor from claiming refund", async function () {
+            /* Get the Refund Vault contract */
+            // Not working inside the beforeEach statement, don't knpw why
+            const RefundVault = await hre.ethers.getContractFactory("RefundVault")
+            const vaultAddress = await dapptokencrowdsale.vault()
+            const vault = await RefundVault.attach(vaultAddress)
+            await vault.connect(investor1)
+            await vault.refund(investor1.address)
+          })
         })
       })
     })
